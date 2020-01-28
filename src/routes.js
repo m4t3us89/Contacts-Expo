@@ -1,0 +1,26 @@
+import { createAppContainer } from 'react-navigation'
+import { createStackNavigator } from 'react-navigation-stack'
+
+import Main from './pages/Main'
+
+export default createAppContainer(
+  createStackNavigator(
+    {
+      Main: {
+        screen: Main,
+        navigationOptions: {
+          title: 'Contatos'
+        }
+      }
+    },
+    {
+      defaultNavigationOptions: {
+        headerTintColor: '#FFF',
+        headerBackTitleVisible: false,
+        headerStyle: {
+          backgroundColor: '#7d40e7'
+        }
+      }
+    }
+  )
+)
