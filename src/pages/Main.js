@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, FlatList } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+  SafeAreaView
+} from 'react-native'
 import * as Contacts from 'expo-contacts'
 
 // import { Container } from './styles';
+
+function Item ({ title }) {
+  return (
+    <View>
+      <Text>{title}</Text>
+    </View>
+  )
+}
 
 export default function Main () {
   const [contacts, setContacts] = useState([])
@@ -29,27 +44,26 @@ export default function Main () {
               return textA < textB ? -1 : textA > textB ? 1 : 0
             })
           )
-          console.log(contacts[0])
         }
       }
     })()
+    console.log('Contatos  ', contacts[0])
   }, [])
 
   return (
     <ScrollView>
       <View style={styles.container}>
-        <FlatList
-          data={contacts}
-          renderItem={({ item }) => (
-            <Text style={styles.item}>
-              <Text>{item.name}</Text>
-              <Text>
-                {item.phoneNumbers &&
-                  item.phoneNumbers.map(phone => phone.number)}
+        {contacts &&
+          contacts.map(contact => (
+            <View key={contact.id} style={styles.info}>
+              <Text style={styles.name}>{contact.firstName}</Text>
+              <Text style={styles.phone}>
+                {contact.phoneNumbers &&
+                  contact.phoneNumbers.length > 0 &&
+                  contact.phoneNumbers[0].number}
               </Text>
-            </Text>
-          )}
-        />
+            </View>
+          ))}
       </View>
     </ScrollView>
   )
@@ -57,12 +71,25 @@ export default function Main () {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     paddingTop: 22
   },
-  item: {
-    padding: 10,
-    fontSize: 18,
-    height: 44
+  info: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 20,
+    paddingTop: 20,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: '#d6d7da'
+  },
+  name: {
+    paddingLeft: 10,
+    fontSize: 16
+  },
+  phone: {
+    paddingRight: 10,
+    fontSize: 13,
+    color: 'gray'
   }
 })
