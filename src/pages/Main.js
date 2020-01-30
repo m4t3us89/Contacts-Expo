@@ -7,57 +7,85 @@ import {
   Text,
   Alert,
   View,
-  Button
-} from 'react-native';
+  Button,
+  TextInput,
+  PermissionsAndroid
+} from 'react-native'
 
-import * as Contacts  from 'expo-contacts'
-
-
+import * as Contacts from 'expo-contacts'
+import { MaterialIcons } from '@expo/vector-icons'
 
 const DATA = [
   {
     id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-    title: 'First Item',
+    title: 'First Item'
   },
   {
     id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-    title: 'Second Item',
+    title: 'Second Item'
   },
   {
     id: '58694a0f-3da1-471f-bd96-145571e29d72',
-    title: 'Third Item',
-  },
-];
+    title: 'Third Item'
+  }
+]
 
-function Item({ id, data, selected, onSelect, onPress }) {
+function Item ({ id, data, selected, onSelect, onPress }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      onLongPress={()=>onSelect(id)}
+      onLongPress={() => onSelect(id)}
       activeOpacity={0.6}
-      style={[
-        styles.info,
-        { backgroundColor: selected ? '#7d40e7' : '#FFF' },
-      ]}
+      style={[styles.info, { backgroundColor: selected ? '#7d40e7' : '#FFF' }]}
     >
-     
-        <Text style={{...styles.name, color: selected ? 'white' : 'black'}}>{data.firstName}</Text>
-        <Text style={{...styles.phone, color: selected ? 'white' : 'gray'}}>
+      <Text style={{ ...styles.name, color: selected ? 'white' : 'black' }}>
+        {data.firstName}
+      </Text>
+      <Text style={{ ...styles.phone, color: selected ? 'white' : 'gray' }}>
         {data.phoneNumbers &&
-            data.phoneNumbers.length > 0 &&
-            data.phoneNumbers[0].number}
-        </Text>
-      
+          data.phoneNumbers.length > 0 &&
+          data.phoneNumbers[0].number}
+      </Text>
     </TouchableOpacity>
-  );
+  )
 }
 
 export default function Main () {
   const [selected, setSelected] = useState(new Map())
   const [contacts, setContacts] = useState([])
+  const [contactsFilter, setContactsFilter] = useState(null)
+  const [keySearch, setKeySearch] = useState()
+
+  /*useEffect(() => {
+    async function requestContactsWritePermission () {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_CONTACTS,
+          {
+            title: 'Permission to Write Contacts',
+            message: 'MyContacts needs permission to write contacts',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK'
+          }
+        )
+        console.log('entrou')
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('You can use the camera')
+        } else {
+          console.log('Camera permission denied')
+        }
+        console.log('entrou')
+      } catch (err) {
+        console.warn(err)
+        console.log('entrou')
+      }
+    }
+
+    requestContactsWritePermission()
+  }, [])*/
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       const { status } = await Contacts.requestPermissionsAsync()
       if (status === 'granted') {
         const {
@@ -78,37 +106,52 @@ export default function Main () {
               return textA < textB ? -1 : textA > textB ? 1 : 0
             })
           )
+          //console.log('Contatos  ', contacts[0])
         }
       }
     })()
-    //console.log('Contatos  ', contacts[0])
   }, [])
+
+  useEffect(() => {
+    if (!keySearch) {
+      setContactsFilter(null)
+      return
+    }
+
+    const key = keySearch.toLowerCase()
+
+    if (key.length > 2) {
+      const filterContacts = contacts.filter(contact => {
+        return (
+          contact.firstName.toLowerCase().indexOf(key) > -1 ||
+          contact.name.toLowerCase().indexOf(key) > -1
+        )
+      })
+      setContactsFilter(filterContacts)
+    }
+  }, [keySearch])
 
   const handlerLongClick = useCallback(
     id => {
-      const newSelected = new Map(selected);
+      const newSelected = new Map(selected)
 
-      if(selected.get(id))
-        newSelected.delete(id)
+      if (selected.get(id)) newSelected.delete(id)
+      else newSelected.set(id, !selected.get(id))
 
-      else
-        newSelected.set(id, !selected.get(id));
-      
-      setSelected(newSelected);
+      setSelected(newSelected)
     },
-    [selected],
-  );
+    [selected]
+  )
 
-  function handlerClick(){
-    if(selected.size == 0)
-      Alert.alert(' Button  Pressed');
-  };
+  function handlerClick () {
+    if (selected.size == 0) Alert.alert(' Button  Pressed')
+  }
 
-  function unSelected(){
+  function unSelected () {
     setSelected(new Map())
   }
 
-  function deleteSelected(){
+  function deleteSelected () {
     Alert.alert(
       'Atenção',
       'Tem certeza que deseja remover o(s) contato(s) selecionado(s) ?',
@@ -117,64 +160,104 @@ export default function Main () {
         {
           text: 'CANCELAR',
           onPress: () => console.log('Cancel Pressed'),
-          style: 'cancel',
+          style: 'cancel'
         },
-        {text: 'OK', onPress: () => console.log('OK Pressed')},
+        {
+          text: 'OK',
+          onPress: async () => {
+            //const { status } = await Contacts.requestPermissionsAsync()
+            //if (status === 'granted') {
+            const iterator = selected[Symbol.iterator]()
+            for (let item of iterator) {
+              console.log(item)
+              try {
+                await Contacts.removeContactAsync(item[0])
+              } catch (err) {
+                console.log('Err ', err)
+              }
+            }
+            //}
+          }
+        }
       ],
-      {cancelable: false},
-    );
+      { cancelable: false }
+    )
   }
 
   return (
     <>
-    {(selected.size > 0) ? (
-      <View style={styles.selectContainer}>
-        <Text style={styles.selectText}>
-          {`Iten(s) selecionado(s): ${selected.size}`}
-        </Text>
-        <View style={{flexDirection: 'row'}}>
-          <Button
-            title="Remover Seleção"
-            onPress={unSelected}
-          />
-          <Text style={{ marginLeft: 10 }}/> 
-          <Button
-            title="Excluir"
-            onPress={deleteSelected}
-          /> 
+      {selected.size > 0 ? (
+        <View style={styles.selectContainer}>
+          <Text style={styles.selectText}>
+            {`Iten(s) selecionado(s): ${selected.size}`}
+          </Text>
+          <View style={{ flexDirection: 'row' }}>
+            <TouchableOpacity onPress={unSelected} style={styles.searchButton}>
+              <MaterialIcons name='close' size={20} color='#FFF' />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={deleteSelected}
+              style={styles.searchButton}
+            >
+              <MaterialIcons name='delete' size={20} color='#FFF' />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View> 
-    ) : null}
-    <SafeAreaView>
-      <FlatList
-        data={contacts}
-        renderItem={({ item }) => (
-          <Item
-            id={item.id}
-            data={item}
-            selected={!!selected.get(item.id)}
-            onSelect={handlerLongClick}
-            onPress={handlerClick}
-          />
-        )}
-        keyExtractor={item => item.id}
-        extraData={selected}
-      />
-    </SafeAreaView>
+      ) : null}
+      <View style={styles.searchForm}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder='Pesquisar contatos...'
+          placeholderTextColor='#999'
+          autoCapitalize='words'
+          autoCorrect={false}
+          value={keySearch}
+          onChangeText={setKeySearch}
+        />
+        <TouchableOpacity
+          onPress={() => {
+            setKeySearch(null)
+          }}
+          style={styles.searchButton}
+        >
+          <MaterialIcons name='close' size={20} color='#FFF' />
+        </TouchableOpacity>
+      </View>
+      {contactsFilter ? (
+        <View style={styles.resultFilter}>
+          <Text>{`${contactsFilter.length} contato(s) encontrado(s).`}</Text>
+        </View>
+      ) : null}
+      <SafeAreaView>
+        <FlatList
+          data={contactsFilter || contacts}
+          renderItem={({ item }) => (
+            <Item
+              id={item.id}
+              data={item}
+              selected={!!selected.get(item.id)}
+              onSelect={handlerLongClick}
+              onPress={handlerClick}
+            />
+          )}
+          keyExtractor={item => item.id}
+          extraData={selected}
+        />
+      </SafeAreaView>
     </>
   )
 }
 
 const styles = StyleSheet.create({
-  selectContainer:{
+  selectContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 50,
+    height: 60,
     backgroundColor: '#7d40e7',
     padding: 10
   },
-  selectText:{
+  selectText: {
     color: 'white'
   },
   info: {
@@ -185,7 +268,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     borderRadius: 4,
     borderWidth: 0.5,
-    borderColor: '#d6d7da',
+    borderColor: '#d6d7da'
   },
   name: {
     paddingLeft: 10,
@@ -193,6 +276,40 @@ const styles = StyleSheet.create({
   },
   phone: {
     paddingRight: 10,
-    fontSize: 13,
+    fontSize: 13
+  },
+  searchButton: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#8e4dff',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 5
+  },
+  searchForm: {
+    flexDirection: 'row',
+    padding: 10
+  },
+  resultFilter: {
+    flexDirection: 'row',
+    padding: 5,
+    justifyContent: 'center'
+  },
+  searchInput: {
+    flex: 1,
+    height: 50,
+    backgroundColor: '#fff',
+    color: '#333',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: {
+      width: 4,
+      height: 4
+    },
+    elevation: 2
   }
-});
+})
