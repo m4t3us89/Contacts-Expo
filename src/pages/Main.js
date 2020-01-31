@@ -9,7 +9,8 @@ import {
   View,
   Button,
   TextInput,
-  PermissionsAndroid
+  PermissionsAndroid,
+  Image
 } from 'react-native'
 
 import * as Contacts from 'expo-contacts'
@@ -33,19 +34,32 @@ const DATA = [
 function Item ({ id, data, selected, onSelect, onPress }) {
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={() => onPress(id)}
       onLongPress={() => onSelect(id)}
-      activeOpacity={0.6}
+      activeOpacity={0.3}
       style={[styles.info, { backgroundColor: selected ? '#7d40e7' : '#FFF' }]}
     >
-      <Text style={{ ...styles.name, color: selected ? 'white' : 'black' }}>
-        {data.firstName}
-      </Text>
-      <Text style={{ ...styles.phone, color: selected ? 'white' : 'gray' }}>
-        {data.phoneNumbers &&
-          data.phoneNumbers.length > 0 &&
-          data.phoneNumbers[0].number}
-      </Text>
+      <View style={styles.name}>
+        <Image
+          source={require('../../img/avatar-m.png')}
+          style={styles.avatar}
+        />
+        <Text
+          style={{
+            color: selected ? 'white' : 'black',
+            fontSize: 16
+          }}
+        >
+          {data.firstName} {data.lastName}
+        </Text>
+      </View>
+      <View style={styles.phone}>
+        <Text style={{ color: selected ? 'white' : 'gray' }}>
+          {data.phoneNumbers &&
+            data.phoneNumbers.length > 0 &&
+            data.phoneNumbers[0].number}
+        </Text>
+      </View>
     </TouchableOpacity>
   )
 }
@@ -143,8 +157,16 @@ export default function Main () {
     [selected]
   )
 
-  function handlerClick () {
-    if (selected.size == 0) Alert.alert(' Button  Pressed')
+  function handlerClick (id) {
+    if (selected.size == 0) {
+      Alert.alert('Criar ação de visualizar detalhes do contato')
+    } else {
+      if (selected.get(id)) {
+        const newSelected = new Map(selected)
+        newSelected.delete(id)
+        setSelected(newSelected)
+      }
+    }
   }
 
   function unSelected () {
@@ -264,15 +286,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingBottom: 20,
     paddingTop: 20,
     borderRadius: 4,
     borderWidth: 0.5,
-    borderColor: '#d6d7da'
+    borderColor: '#d6d7da',
+    height: 100
   },
   name: {
     paddingLeft: 10,
-    fontSize: 16
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   phone: {
     paddingRight: 10,
@@ -311,5 +336,6 @@ const styles = StyleSheet.create({
       height: 4
     },
     elevation: 2
-  }
+  },
+  avatar: { width: 60, height: 60, marginRight: 5, borderRadius: 50 }
 })
